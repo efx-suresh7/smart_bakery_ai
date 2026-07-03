@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block page_title %}Raw Materials Inventory{% endblock %}
+{% block page_subtitle %}Manage bakery ingredients and monitor low-stock thresholds{% endblock %}
+
+{% block content %}
+<div class="inventory-container fade-in">
+    <!-- Summary & Actions Bar -->
+    <div class="action-bar glass-card">
+        <div class="action-summary">
+            <span class="badge badge-info"><i class="fa-solid fa-cookie-bite"></i> Total Materials: {{ materials|length }}</span>
+            {% if low_stock_count > 0 %}
+            <span class="badge badge-danger"><i class="fa-solid fa-circle-exclamation"></i> {{ low_stock_count }} Low Stock Alerts</span>
+            {% else %}
+            <span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> All items fully stocked</span>
+            {% endif %}
+        </div>
+        <button class="btn btn-primary btn-glowing" onclick="openAddModal()">
+            <i class="fa-solid fa-plus"></i> Add Material
+        </button>
+    </div>
+
+    <!-- Inventory Table Card -->
+    <div class="glass-card table-card">
+        <div class="table-responsive">
+            <table class="bakery-table">
+                <thead>
+                    <tr>
+                        <th>Material Name</th>
+                        <th class="text-right">Current Stock</th>
+                        <th>Measurement Unit</th>
+                        <th class="text-right">Reorder Threshold</th>
+                        <th class="text-center">Stock Level</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if materials %}
+                        {% for item in materials %}
+                        <tr class="{% if item.is_low %}row-highlight-danger{% endif %}">
+                            <td class="font-semibold">{{ item.name }}</td>
+                            <td class="text-right font-mono">{{ item.stock_qty }}</td>
+                            <td><span class="unit-pill">{{ item.unit }}</span></td>
+                            <td class="text-right font-mono">{{ item.reorder_threshold }}</td>
+                            <td class="text-center">
+                                {% if item.is_low %}
+                                    <span class="badge-status badge-status-danger glowing-text-danger">
+                                        <i class="fa-solid fa-triangle-exclamation"></i> Low Stock
+                                    </span>
+                                {% else %}
+                                    <span class="badge-status badge-status-success">
+                                        <i class="fa-solid fa-check"></i> Good
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center actions-cell">
+                                <button class="btn-action btn-edit" 
+                                        onclick="openEditModal('{{ item.id }}', '{{ item.name }}', '{{ item.price }}', '{{ item.stock_qty }}', '{{ item.unit }}', '{{ item.reorder_threshold }}')">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                {% if user_role == 'Admin' %}
+                                <form action="{{ url_for('delete_inventory', item_id=item.id) }}" method="POST" class="inline-form" onsubmit="return confirm('Are you sure you want to permanently delete this material?');">
+                                    <button type="submit" class="btn-action btn-delete">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                                {% else %}
+                                <button class="btn-action btn-disabled" title="Admins only" disabled>
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">No raw materials in inventory yet. Click "Add Material" to create one.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Material Modal -->
+<div id="addMaterialModal" class="modal-overlay">
+    <div class="modal-card glass-card">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-plus-circle text-cyan"></i> Add New Material</h3>
+            <button class="close-modal-btn" onclick="closeAddModal()">&times;</button>
+        </div>
+        <form action="{{ url_for('add_inventory') }}" method="POST" class="modal-form">
+            <div class="form-group">
+                <label for="add-name">Material Name</label>
+                <input type="text" id="add-name" name="name" placeholder="e.g. Bread Flour" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label for="add-price">Cost Price ($)</label>
+                    <input type="number" id="add-price" name="price" step="0.01" min="0" placeholder="e.g. 1.50">
+                </div>
+                <div class="form-group col-6">
+                    <label for="add-unit">Unit</label>
+                    <input type="text" id="add-unit" name="unit" placeholder="e.g. kg, L, bags" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label for="add-stock">Initial Stock Quantity</label>
+                    <input type="number" id="add-stock" name="stock_qty" step="0.1" min="0" placeholder="e.g. 50" required>
+                </div>
+                <div class="form-group col-6">
+                    <label for="add-threshold">Reorder Threshold</label>
+                    <input type="number" id="add-threshold" name="reorder_threshold" step="0.1" min="0" placeholder="e.g. 10" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-glowing mt-3">Create Material</button>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Material Modal -->
+<div id="editMaterialModal" class="modal-overlay">
+    <div class="modal-card glass-card">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-pen-to-square text-pink"></i> Edit Raw Material</h3>
+            <button class="close-modal-btn" onclick="closeEditModal()">&times;</button>
+        </div>
+        <form id="editForm" method="POST" class="modal-form">
+            <div class="form-group">
+                <label for="edit-name">Material Name</label>
+                <input type="text" id="edit-name" name="name" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label for="edit-price">Cost Price ($)</label>
+                    <input type="number" id="edit-price" name="price" step="0.01" min="0">
+                </div>
+                <div class="form-group col-6">
+                    <label for="edit-unit">Unit</label>
+                    <input type="text" id="edit-unit" name="unit" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label for="edit-stock">Current Stock Quantity</label>
+                    <input type="number" id="edit-stock" name="stock_qty" step="0.1" min="0" required>
+                </div>
+                <div class="form-group col-6">
+                    <label for="edit-threshold">Reorder Threshold</label>
+                    <input type="number" id="edit-threshold" name="reorder_threshold" step="0.1" min="0" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-secondary btn-block btn-glowing mt-3">Save Changes</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const addModal = document.getElementById("addMaterialModal");
+    const editModal = document.getElementById("editMaterialModal");
+    const editForm = document.getElementById("editForm");
+
+    function openAddModal() {
+        addModal.classList.add("active");
+    }
+    
+    function closeAddModal() {
+        addModal.classList.remove("active");
+    }
+
+    function openEditModal(id, name, price, stock, unit, threshold) {
+        // Set values in inputs
+        document.getElementById("edit-name").value = name;
+        document.getElementById("edit-price").value = parseFloat(price) || 0.0;
+        document.getElementById("edit-stock").value = parseFloat(stock) || 0.0;
+        document.getElementById("edit-unit").value = unit;
+        document.getElementById("edit-threshold").value = parseFloat(threshold) || 0.0;
+        
+        // Dynamically set form action
+        editForm.action = `/inventory/edit/${id}`;
+        
+        editModal.classList.add("active");
+    }
+
+    function closeEditModal() {
+        editModal.classList.remove("active");
+    }
+
+    // Close modal if user clicks background overlay
+    window.onclick = function(event) {
+        if (event.target === addModal) {
+            closeAddModal();
+        }
+        if (event.target === editModal) {
+            closeEditModal();
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block page_title %}Sales Management{% endblock %}
+{% block page_subtitle %}Record customer purchases and track historical sales performance{% endblock %}
+
+{% block content %}
+<div class="sales-page-grid fade-in">
+    <!-- Left Column: Add Sales Record Form -->
+    <div class="glass-card sales-form-card">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-cart-plus text-cyan"></i> Record Daily Sales</h3>
+            <p>Add new customer purchase records to update historical trends and retrain the AI</p>
+        </div>
+        
+        <form action="{{ url_for('sales') }}" method="POST" class="sales-add-form">
+            <div class="form-group">
+                <label for="item_id">Bakery Product</label>
+                <select id="item_id" name="item_id" required>
+                    <option value="" disabled selected>-- Select Baked Product --</option>
+                    {% for item in items %}
+                    <option value="{{ item.id }}">{{ item.name }} (${{ "%.2f"|format(item.price) }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="date">Date of Sale</label>
+                <input type="date" id="date" name="date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="quantity_sold">Quantity Sold (units)</label>
+                <input type="number" id="quantity_sold" name="quantity_sold" min="1" placeholder="e.g. 25" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-glowing mt-4">
+                <span>Save Sales Record</span>
+                <i class="fa-solid fa-floppy-disk"></i>
+            </button>
+        </form>
+    </div>
+
+    <!-- Right Column: Sales History & Filters -->
+    <div class="glass-card sales-history-card">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-clock-rotate-left text-pink"></i> Sales History</h3>
+            <p>Filter and view previous sales logs</p>
+        </div>
+        
+        <!-- Filter Form -->
+        <form action="{{ url_for('sales') }}" method="GET" class="filter-form">
+            <div class="filter-inputs">
+                <div class="form-group filter-group">
+                    <label for="filter-item">Product</label>
+                    <select id="filter-item" name="item_id">
+                        <option value="all" {% if selected_item_id == 'all' or not selected_item_id %}selected{% endif %}>All Products</option>
+                        {% for item in items %}
+                        <option value="{{ item.id }}" {% if selected_item_id == item.id|string %}selected{% endif %}>{{ item.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group filter-group">
+                    <label for="filter-start-date">Start Date</label>
+                    <input type="date" id="filter-start-date" name="start_date" value="{{ start_date or '' }}">
+                </div>
+                <div class="form-group filter-group">
+                    <label for="filter-end-date">End Date</label>
+                    <input type="date" id="filter-end-date" name="end_date" value="{{ end_date or '' }}">
+                </div>
+            </div>
+            <div class="filter-buttons">
+                <button type="submit" class="btn btn-secondary"><i class="fa-solid fa-filter"></i> Apply Filters</button>
+                <a href="{{ url_for('sales') }}" class="btn btn-outline"><i class="fa-solid fa-rotate-left"></i> Reset</a>
+            </div>
+        </form>
+
+        <!-- Sales Logs Table -->
+        <div class="table-responsive sales-table-wrapper">
+            <table class="bakery-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Product Name</th>
+                        <th class="text-right">Qty Sold</th>
+                        <th class="text-right">Price</th>
+                        <th class="text-right">Total Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if sales_records %}
+                        {% for record in sales_records %}
+                        <tr>
+                            <td class="font-mono text-muted">{{ record.date.strftime('%Y-%m-%d') }}</td>
+                            <td class="font-semibold">{{ record.item.name }}</td>
+                            <td class="text-right font-mono">{{ record.quantity_sold }}</td>
+                            <td class="text-right font-mono">${{ "%.2f"|format(record.item.price) }}</td>
+                            <td class="text-right font-mono text-cyan">${{ "%.2f"|format(record.quantity_sold * record.item.price) }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No sales records match your filters.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Set default sale date in form to today
+    document.addEventListener("DOMContentLoaded", function() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('date').value = today;
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block page_title %}AI Demand Forecasting{% endblock %}
+{% block page_subtitle %}Predict optimal baking quantities using historical patterns and rolling sales averages{% endblock %}
+
+{% block content %}
+<div class="forecast-container fade-in">
+    <!-- Selection Control Card -->
+    <div class="glass-card forecast-control-card">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-brain text-cyan"></i> Predict Baking Targets</h3>
+            <p>Select a date to calculate predicted demand. The system will load the joblib model, calculate recent rolling sales, and output the recommended units to bake.</p>
+        </div>
+        
+        <div class="forecast-form">
+            <div class="form-group inline-group-50">
+                <label for="forecast-date">Bake Target Date</label>
+                <input type="date" id="forecast-date" required>
+            </div>
+            <button id="btn-run-forecast" class="btn btn-primary btn-glowing btn-inline" onclick="runForecast()">
+                <span>Run AI Forecasting</span>
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="forecast-loader" class="loader-overlay d-none">
+        <div class="spinner"></div>
+        <p>Loading scikit-learn regressor model and processing features...</p>
+    </div>
+
+    <!-- Forecast Results Card (Hidden by default, shown via JS) -->
+    <div id="forecast-results-card" class="glass-card forecast-results-card d-none">
+        <div class="results-header">
+            <div>
+                <h3><i class="fa-solid fa-square-poll-vertical text-pink"></i> Forecast Output for <span id="results-date">--</span></h3>
+                <span id="results-day-pill" class="badge-day">--</span>
+                <span id="results-weekend-pill" class="badge-weekend">--</span>
+            </div>
+            <div class="results-action">
+                <button class="btn btn-outline" onclick="window.print()"><i class="fa-solid fa-print"></i> Print Bake List</button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="bakery-table">
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th class="text-right">Past 7-Day Average Sales</th>
+                        <th class="text-right">Unit Price</th>
+                        <th class="text-right highlight-header">AI Predicted Demand (Qty to Bake)</th>
+                        <th class="text-right">Estimated Gross Revenue</th>
+                    </tr>
+                </thead>
+                <tbody id="forecast-table-body">
+                    <!-- Dynamic Rows -->
+                </tbody>
+                <tfoot>
+                    <tr class="table-total-row">
+                        <td colspan="3" class="text-left font-bold">Total Forecasted Baking Volume</td>
+                        <td id="total-predicted-qty" class="text-right font-bold font-mono text-cyan">0 units</td>
+                        <td id="total-estimated-revenue" class="text-right font-bold font-mono text-success">$0.00</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="forecast-tip-box">
+            <i class="fa-solid fa-lightbulb text-orange"></i>
+            <p><strong>Baking Advisory:</strong> These values represent the mathematical mode for optimal revenue while minimizing wastage. Adjust targets if local events (e.g. holiday or local parade) are planned for this date.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Default forecast date to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+        document.getElementById('forecast-date').value = tomorrowStr;
+    });
+
+    async function runForecast() {
+        const dateInput = document.getElementById('forecast-date');
+        const dateStr = dateInput.value;
+        if (!dateStr) {
+            alert("Please pick a valid date.");
+            return;
+        }
+
+        const loader = document.getElementById('forecast-loader');
+        const resultsCard = document.getElementById('forecast-results-card');
+        const btn = document.getElementById('btn-run-forecast');
+
+        // Toggle state
+        loader.classList.remove('d-none');
+        resultsCard.classList.add('d-none');
+        btn.disabled = true;
+
+        try {
+            const response = await fetch(`/api/forecast/${dateStr}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to fetch predictions.");
+            }
+
+            // Fill results
+            document.getElementById('results-date').textContent = data.date;
+            
+            const dayPill = document.getElementById('results-day-pill');
+            dayPill.textContent = data.day_of_week;
+            
+            const weekendPill = document.getElementById('results-weekend-pill');
+            if (data.is_weekend) {
+                weekendPill.textContent = "Weekend Shift";
+                weekendPill.className = "badge-status badge-status-danger glowing-text-danger";
+            } else {
+                weekendPill.textContent = "Weekday Shift";
+                weekendPill.className = "badge-status badge-status-success";
+            }
+
+            const tbody = document.getElementById('forecast-table-body');
+            tbody.innerHTML = '';
+
+            let totalQty = 0;
+            let totalRevenue = 0.0;
+
+            data.predictions.forEach(p => {
+                const estRevenue = p.predicted_qty * p.unit_price;
+                totalQty += p.predicted_qty;
+                totalRevenue += estRevenue;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="font-semibold">${p.item_name}</td>
+                    <td class="text-right font-mono">${p.past_7_day_avg} units</td>
+                    <td class="text-right font-mono">$${p.unit_price.toFixed(2)}</td>
+                    <td class="text-right font-bold font-mono text-cyan">${p.predicted_qty} units</td>
+                    <td class="text-right font-mono text-success">$${estRevenue.toFixed(2)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById('total-predicted-qty').textContent = `${totalQty} units`;
+            document.getElementById('total-estimated-revenue').textContent = `$${totalRevenue.toFixed(2)}`;
+
+            // Show results
+            resultsCard.classList.remove('d-none');
+        } catch (error) {
+            alert("Error running forecast:\n" + error.message);
+        } finally {
+            loader.classList.add('d-none');
+            btn.disabled = false;
+        }
+    }
+</script>
+{% endblock %}

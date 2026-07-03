@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Bakery AI - Management & Forecasting</title>
+    <!-- Google Fonts: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Style Sheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        {% if logged_in %}
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-wheat-awn neon-icon"></i>
+                <h2>Smart<span>Bakery</span></h2>
+            </div>
+            
+            <div class="user-profile-badge">
+                <div class="avatar">
+                    <i class="fa-solid fa-user-astronaut"></i>
+                </div>
+                <div class="user-info">
+                    <span class="user-name">{{ username }}</span>
+                    <span class="user-role">{{ user_role }}</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul>
+                    <li>
+                        <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.path == url_for('dashboard') %}active{% endif %}">
+                            <i class="fa-solid fa-chart-pie"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('inventory') }}" class="nav-link {% if request.path == url_for('inventory') %}active{% endif %}">
+                            <i class="fa-solid fa-boxes-stacked"></i>
+                            <span>Inventory</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('sales') }}" class="nav-link {% if request.path == url_for('sales') %}active{% endif %}">
+                            <i class="fa-solid fa-cart-shopping"></i>
+                            <span>Sales</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('forecast_view') }}" class="nav-link {% if request.path == url_for('forecast_view') %}active{% endif %}">
+                            <i class="fa-solid fa-brain"></i>
+                            <span>AI Forecast</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Log Out</span>
+                </a>
+            </div>
+        </aside>
+        {% endif %}
+
+        <!-- Main Content Area -->
+        <main class="main-content {% if not logged_in %}full-width{% endif %}">
+            <!-- Header Bar -->
+            {% if logged_in %}
+            <header class="top-header">
+                <div class="header-title">
+                    <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                    <p class="text-muted">{% block page_subtitle %}Welcome to the AI Control Panel{% endblock %}</p>
+                </div>
+                <div class="date-badge">
+                    <i class="fa-regular fa-calendar-days"></i>
+                    <span id="current-date-display">July 3, 2026</span>
+                </div>
+            </header>
+            {% endif %}
+
+            <!-- Alert Container for Flash Messages -->
+            <div class="alert-container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} fade-in">
+                                <i class="fa-solid {% if category == 'success' %}fa-circle-check{% elif category == 'danger' %}fa-circle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+                                <span>{{ message }}</span>
+                                <button class="close-alert-btn" onclick="this.parentElement.remove()">&times;</button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <!-- Block for Page specific content -->
+            <div class="content-body">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+        
+        {% if logged_in %}
+        <!-- Floating Chatbot Widget -->
+        <div class="chatbot-container" id="chatbot-container">
+            <button class="chatbot-toggle-btn" id="chatbot-toggle-btn" onclick="toggleChat()">
+                <i class="fa-solid fa-robot"></i>
+                <span class="chat-badge-pulse"></span>
+            </button>
+            <div class="chatbot-window glass-card" id="chatbot-window">
+                <div class="chatbot-header">
+                    <div class="bot-info">
+                        <i class="fa-solid fa-brain text-cyan"></i>
+                        <div>
+                            <h4>Bakery Operations AI</h4>
+                            <span class="bot-status"><span class="status-indicator"></span> online</span>
+                        </div>
+                    </div>
+                    <button class="close-chat-btn" onclick="toggleChat()">&times;</button>
+                </div>
+                <div class="chatbot-messages" id="chatbot-messages">
+                    <div class="msg bot-msg">
+                        <p>Hello! I am your AI Operations Assistant. Ask me anything about stock, sales targets, or supplier restock drafts!</p>
+                    </div>
+                </div>
+                <div class="chatbot-input-area">
+                    <input type="text" id="chatbot-input" placeholder="Type a message..." onkeydown="if(event.key === 'Enter') sendChatMessage()">
+                    <button class="send-chat-btn" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Main JavaScript File -->
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+    <script>
+        // Set dynamic date in header
+        const dateElement = document.getElementById('current-date-display');
+        if (dateElement) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            dateElement.textContent = new Date().toLocaleDateString('en-US', options);
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

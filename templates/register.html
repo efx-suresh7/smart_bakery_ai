@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card fade-in">
+        <div class="auth-header">
+            <i class="fa-solid fa-wheat-awn neon-logo"></i>
+            <h2>Smart<span>Bakery</span></h2>
+            <p>Register a new system user profile</p>
+        </div>
+        
+        <form action="{{ url_for('register') }}" method="POST" class="auth-form">
+            <div class="form-group">
+                <label for="name"><i class="fa-regular fa-user"></i> Full Name</label>
+                <input type="text" id="name" name="name" placeholder="John Doe" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email"><i class="fa-regular fa-envelope"></i> Email Address</label>
+                <input type="email" id="email" name="email" placeholder="name@bakery.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password"><i class="fa-solid fa-lock"></i> Password</label>
+                <input type="password" id="password" name="password" placeholder="Min. 8 characters" required>
+            </div>
+
+            <div class="form-group">
+                <label for="role"><i class="fa-solid fa-user-shield"></i> System Role</label>
+                <select id="role" name="role" required>
+                    <option value="Staff" selected>Staff (Sales & Inventory Management)</option>
+                    <option value="Admin">Admin (Full access + Deletion rights)</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block btn-glowing">
+                <span>Create Account</span>
+                <i class="fa-solid fa-user-plus"></i>
+            </button>
+        </form>
+        
+        <div class="auth-footer">
+            <p>Already have an account? <a href="{{ url_for('login') }}">Sign In</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

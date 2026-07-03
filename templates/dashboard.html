@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block page_title %}Operations Dashboard{% endblock %}
+{% block page_subtitle %}Real-time sales, inventory, and AI forecasting analysis{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid fade-in">
+    <!-- Row 1: KPI Summary Cards -->
+    <div class="kpi-card glass-card">
+        <div class="kpi-icon icon-cyan">
+            <i class="fa-solid fa-bullseye"></i>
+        </div>
+        <div class="kpi-content">
+            <h3>Forecast Accuracy</h3>
+            <div class="kpi-value"><span id="kpi-accuracy">--</span>%</div>
+            <p>Based on past 30 days of sales</p>
+        </div>
+    </div>
+
+    <div class="kpi-card glass-card">
+        <div class="kpi-icon icon-pink">
+            <i class="fa-solid fa-trash-can"></i>
+        </div>
+        <div class="kpi-content">
+            <h3>Estimated Wastage</h3>
+            <div class="kpi-value"><span id="kpi-wastage">--</span> <span class="unit-label">units</span></div>
+            <p>Leftover bakes in last 7 days</p>
+        </div>
+    </div>
+
+    <div class="kpi-card glass-card">
+        <div class="kpi-icon icon-orange" id="kpi-stock-icon">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="kpi-content">
+            <h3>Low Stock Alerts</h3>
+            <div class="kpi-value"><span id="kpi-low-stock">--</span> <span class="unit-label">items</span></div>
+            <p>Materials below reorder threshold</p>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-charts-grid">
+    <!-- Chart 1: Sales Trend (Line Chart) -->
+    <div class="chart-container glass-card">
+        <div class="chart-header">
+            <h3><i class="fa-solid fa-chart-line"></i> Sales & Revenue Trend</h3>
+            <p>Daily sales volume and gross revenue over the past 7 days</p>
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="salesTrendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 2: Forecast vs Actual Sales (Bar Chart) -->
+    <div class="chart-container glass-card">
+        <div class="chart-header">
+            <h3><i class="fa-solid fa-chart-bar"></i> Forecast vs. Actual Sales</h3>
+            <p>Daily comparison between predicted bake target and actual units sold (past 14 days)</p>
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="forecastActualChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-lower-grid">
+    <!-- Wastage Report Table -->
+    <div class="data-table-container glass-card">
+        <div class="chart-header">
+            <h3><i class="fa-solid fa-circle-minus text-pink"></i> Wastage Breakdown (7-Day Sum)</h3>
+            <p>Leftover quantities representing potential baking optimization</p>
+        </div>
+        <div class="table-responsive">
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th class="text-right">Est. Baked (Forecast)</th>
+                        <th class="text-right">Actual Sold</th>
+                        <th class="text-right">Leftover (Wastage)</th>
+                        <th class="text-right">Efficiency</th>
+                    </tr>
+                </thead>
+                <tbody id="wastage-table-body">
+                    <tr>
+                        <td colspan="5" class="text-center">Loading wastage data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Low Stock Inventory Widget -->
+    <div class="data-table-container glass-card">
+        <div class="chart-header">
+            <h3><i class="fa-solid fa-boxes-stacked text-orange"></i> Urgent Reorders</h3>
+            <p>Raw materials that require stock replenishment immediately</p>
+        </div>
+        <div class="table-responsive">
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Material</th>
+                        <th class="text-right">Current Stock</th>
+                        <th class="text-right">Reorder Threshold</th>
+                        <th class="text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="low-stock-table-body">
+                    <tr>
+                        <td colspan="4" class="text-center">Loading stock data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize Dashboard Logic
+    document.addEventListener("DOMContentLoaded", function() {
+        loadDashboardData();
+    });
+</script>
+{% endblock %}

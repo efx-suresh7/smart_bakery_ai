@@ -1,0 +1,19 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Databases
+bakery.db
+
+# Serialized ML Model
+forecast_model.joblib
+
+# Local logs
+*.log
+.system_generated/
+
+# OS files
+.DS_Store
+Thumbs.db
