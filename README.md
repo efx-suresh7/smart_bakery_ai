@@ -49,7 +49,7 @@ Open your browser and navigate to **`http://127.0.0.1:5005/login`** to sign in!
 ### 1. Operations Dashboard
 The main control panel serves as the central hub of the bakery. It loads visual metrics from database queries and aggregates them into charts.
 
-![Operations Dashboard](screenshots/dashboard.png?v=2)
+![Operations Dashboard](screenshots/dashboard_v2.png)
 
 #### Core Functions:
 - **Forecast Accuracy KPI**: Calculates the forecast accuracy percentage over the last 30 days based on historical actual sales compared to the model's predictions.
@@ -63,7 +63,7 @@ The main control panel serves as the central hub of the bakery. It loads visual 
 ### 2. AI Assistant Chatbot
 A floating chat interface in the lower right corner, styled as a modern clean popup box, designed to answer operations queries and assist with supplier orders.
 
-![AI Assistant Chatbot](screenshots/ai_assistant.png?v=2)
+![AI Assistant Chatbot](screenshots/ai_assistant_v2.png)
 
 #### Core Functions:
 - **Real-Time Context Delivery**: Every chat query sent to the backend endpoint `/api/ai_chat` automatically queries the database to compile a report containing:
@@ -79,7 +79,7 @@ A floating chat interface in the lower right corner, styled as a modern clean po
 ### 3. Raw Materials Inventory Management (CRUD)
 The interface for tracking ingredients (category: Raw Material) and monitoring threshold levels.
 
-![Raw Materials Inventory](screenshots/inventory.png?v=2)
+![Raw Materials Inventory](screenshots/inventory_v2.png)
 
 #### Core Functions:
 - **Ingredient Catalog Grid**: Renders all ingredients in a table showing current stock, unit of measurement, and reorder threshold limits.
@@ -92,7 +92,7 @@ The interface for tracking ingredients (category: Raw Material) and monitoring t
 ### 4. Sales Logging & History Filters
 Allows staff to record customer purchases and view historical database logs.
 
-![Sales Records and History](screenshots/sales.png?v=2)
+![Sales Records and History](screenshots/sales_v2.png)
 
 #### Core Functions:
 - **Record Purchase Entry**: Form input to log daily customer transactions (Dropdown product list, Date selection, and Qty sold). Updates database tables and retrains models accordingly.
@@ -104,7 +104,7 @@ Allows staff to record customer purchases and view historical database logs.
 ### 5. scikit-learn AI Forecasting
 The trigger page to generate Recommended Bake Lists for any calendar date.
 
-![Bake Forecasting Screen](screenshots/forecast.png?v=2)
+![Bake Forecasting Screen](screenshots/forecast_v2.png)
 
 #### Core Functions:
 - **Future Date Predictor**: Allows staff to pick any date (defaults to tomorrow) and request baking recommendations.
